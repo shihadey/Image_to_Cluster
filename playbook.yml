@@ -1,0 +1,13 @@
+---
+- name: Build & Deploy Nginx App
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+    - name: Build image Packer
+      command: packer build nginx.pkr.hcl
+
+    - name: Deploy sur K3d
+      kubernetes.core.k8s:
+        state: present
+        src: deploiement.yaml
