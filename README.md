@@ -76,6 +76,7 @@ newgrp docker
 ```
 ansible-galaxy collection install kubernetes.core
 ```
+**construction de l'image custom nginx avec le template packer**
 **création fichier nginx.pkr.hcl **
 ```
 packer {
@@ -102,7 +103,71 @@ build {
 }
 
 ```
+**construction de l'image custom nginx avec le template packer**
+** création de deploiement.yaml et déploiement de K3d **
+```
+nano deploiement.yaml
+```
+**Inserez le contenu suivant dedans **
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx-app
+  template:
+    metadata:
+      labels:
+        app: nginx-app
+    spec:
+      containers:
+      - name: nginx
+        image: nginx-custom:latest
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-app-svc
+spec:
+  type: NodePort
+  selector:
+    app: nginx-app
+  ports:
+  - port: 80
+    targetPort: 80
+```
+**playbook ansible à partir de deploiement.yaml**
+```
+nano playbook.yml
+```
+**copier le contenu dedans**
+```
+---
+- name: Build & Deploy Nginx App
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+    - name: Build image Packer
+      command: packer build nginx.pkr.hcl
 
+    - name: Deploy sur K3d
+      kubernetes.core.k8s:
+        state: present
+        src: deploiement.yaml
+
+```
+**création du fichier inventory.init sur lequel se basera l'execution du playbook**
+```
+[local]
+localhost ansible_connection=local   
+```
 
 
 ---------------------------------------------------
