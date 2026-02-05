@@ -46,9 +46,64 @@ kubectl get svc
 ```
 kubectl port-forward svc/mario 8080:80 >/tmp/mario.log 2>&1 &
 ```
+
+
 **Réccupération de l'URL de l'application Mario** 
 Votre application Mario est déployée sur le cluster K3d. Pour obtenir votre URL cliquez sur l'onglet **[PORTS]** dans votre Codespace et rendez public votre port **8080** (Visibilité du port).
 Ouvrez l'URL dans votre navigateur et jouer !
+
+**téléchargements de packer et ansible et vérification**
+```
+curl -fsSL https://releases.hashicorp.com/packer/1.14.3/packer_1.14.3_linux_amd64.zip -o packer.zip
+unzip -o packer.zip && sudo mv packer /usr/local/bin/ && rm packer.zip
+#!/bin/bash
+sudo apt-get update
+sudo apt-get install -y software-properties-common
+sudo add-apt-repository --yes --update ppa:ansible/ansible
+sudo apt-get install -y ansible   
+packer version && ansible --version
+```
+**Installation des dépendances ansible et packer et démarrage de docker**
+```
+sudo systemctl start docker
+```
+**Création de l'user du groupe docker**
+```
+sudo usermod -aG docker $USER
+newgrp docker
+```
+**Installation de la collection Ansible essentielle pour gérer les ressources Kubernetes**
+```
+ansible-galaxy collection install kubernetes.core
+```
+**création fichier nginx.pkr.hcl **
+```
+packer {
+  required_plugins {
+    docker = {
+      version = ">= 1.0.8"
+      source  = "github.com/hashicorp/docker"
+    }
+  }
+}
+
+source "docker" "nginx" {
+  image  = "nginx:latest"
+  commit = true
+}
+
+build {
+  sources = ["source.docker.nginx"]
+
+  provisioner "file" {
+    source      = "index.html"
+    destination = "/usr/share/nginx/html/index.html"
+  }
+}
+
+```
+
+
 
 ---------------------------------------------------
 Séquence 3 : Exercice
